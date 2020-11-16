@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>比赛页面</title>
+</head>
+<body>
+{{range $u := .users}}
+    {{ $u.First }}&nbsp;&nbsp;&nbsp;对战&nbsp;&nbsp;&nbsp;{{$u.Back}}
+    {{ if eq $u.Win 1 }}
+        &nbsp;&nbsp;&nbsp;胜{{$u.WinChessPieces}}子&nbsp;&nbsp;&nbsp;胜利原因: {{$u.Reason}}
+        <a onclick=viewResult({{$u.First}},{{$u.Back}}) > 查看比赛结果 </a>&nbsp;&nbsp;<a onclick=playGame({{$u.First}},{{$u.Back}})> 点击进行比赛 </a>
+    {{ else if eq $u.Win 2 }}
+        &nbsp;&nbsp;<a onclick=playGame({{$u.First}},{{$u.Back}})> 点击进行比赛 </a>
+    {{ else if eq $u.Win 0 }}
+        &nbsp;&nbsp;<a onclick=playGame({{$u.First}},{{$u.Back}})> 点击进行比赛 </a> &nbsp;&nbsp; {{$u.Reason}}
+    {{else}}
+        &nbsp;&nbsp;&nbsp;输{{$u.WinChessPieces}}子&nbsp;&nbsp;&nbsp;输原因: {{$u.Reason}}
+        <a onclick=viewResult({{$u.First}},{{$u.Back}}) > 查看比赛结果 </a>&nbsp;&nbsp;<a onclick=playGame({{$u.First}},{{$u.Back}})> 点击进行比赛 </a>
+    {{end}} <br>
+{{end}}
+<div id="rank" style="position: absolute; width: 200px; height: 300px;top: 10px;right: 10px;">
+
+</div>
+<script src="https://cdn.bootcdn.net/ajax/libs/jquery/3.5.1/jquery.js"></script>
+<script>
+    const rank = document.getElementById("rank")
+    const rankData = {{ .rank }};
+    let msg = '';
+    console.log(rankData)
+    rankData.forEach(r => {
+        msg += `${r.Rank}  ${r.Name}  得分: ${r.Score}  赢子: ${r.WinChessPieces}\n\n`
+    })
+    rank.innerText = msg
+
+    function viewResult(first, back) {
+        window.open(`/page/show?first=${first}&back=${back}`)
+    }
+
+    function playGame(first, back) {
+        $.post(`/play/${first}/${back}`)
+        location.reload();
+    }
+</script>
+</body>
+</html>

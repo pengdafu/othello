@@ -1,0 +1,242 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>黑白棋</title>
+    <style type="text/css">
+        canvas{
+            display: block;
+            margin: 50px auto;
+            box-shadow: -2px -2px 2px #F3F2F2, 5px 5px 5px #6F6767;
+        }
+    </style>
+</head>
+<body>
+<canvas id="mycanvas" width="260px" height="260px" style="background: darkcyan"></canvas>
+<div style="text-align: center">
+    先手(白棋)：{{ .first }} &nbsp;&nbsp;&nbsp; 后手(黑棋): {{ .back }} <br><br>
+    <button id="click">查看对战</button>
+</div>
+<script type="text/javascript">
+    let { First, Back, Reason, Win, WinChessPieces, Data } = {{ .res }}
+    Data = JSON.parse(Data)
+    var chess = document.getElementById("mycanvas");
+    var context = chess.getContext('2d');
+    var BLACK = 1
+    var WHITE = -1
+    var GRAY = 0
+    var chessBox = [];//用于存放棋盘中落子的情况
+    for(var i=0;i<8;i++){
+        chessBox[i]=[];
+        for(var j=0;j<8;j++){
+            chessBox[i][j]=0;//初始值为0
+        }
+    }
+    function drawChessBoard(){
+        for(var i=0;i<9;i++){
+            context.strokeStyle="#D6D1D1";
+            context.moveTo(9+i*30,9);//垂直方向画9根线，相距30px;
+            context.lineTo(9+i*30,250);
+            context.stroke();
+            context.moveTo(9,9+i*30);//水平方向画9根线，相距30px;棋盘为14*14；
+            context.lineTo(250,9+i*30);
+            context.stroke();
+            chessBox[3][3] = WHITE
+            chessBox[4][4] = WHITE
+            chessBox[3][4] = BLACK
+            chessBox[4][3] = BLACK
+            oneStep(3, 3, WHITE)
+            oneStep(4, 4, WHITE)
+            oneStep(3, 4, BLACK)
+            oneStep(4, 3, BLACK)
+        }
+    }
+    drawChessBoard();//绘制棋盘
+    function oneStep(i,j,k){
+        context.beginPath();
+        context.arc(9+j*30+15,9+i*30+15,8,0,2*Math.PI);//绘制棋子
+        var g=context.createRadialGradient(9+i*30,9+j*30,13,9+i*30,9+j*30,0);//设置渐变
+        if(k === BLACK){                           //k=true是黑棋，否则是白棋
+            g.addColorStop(0,'#0A0A0A');//黑棋
+            g.addColorStop(1,'#636766');
+        }else {
+            g.addColorStop(0,'#D1D1D1');//白棋
+            g.addColorStop(1,'#F9F9F9');
+        }
+        context.fillStyle=g;
+        context.fill();
+        context.closePath();
+    }
+    document.getElementById("click").onclick = async () => {
+        console.log("click")
+        for (let i = 0; i < Data.length; i++) {
+            const { point: { x, y }, color, gamer } = Data[i];
+            await new Promise(r => setTimeout(() => r(), 500))
+            await set(chessBox, color, x, y, 0, 0)
+            await new Promise(r => setTimeout(() => r(), 500))
+            console.log(x, y, color, gamer)
+            if (findUp(chessBox, x, y, color)) {
+                await set(chessBox, color, x, y, -1, 0)
+            }
+            if (findDown(chessBox, x, y, color)) {
+                await set(chessBox, color, x, y, 1, 0)
+            }
+            if (findLeft(chessBox, x, y, color)) {
+                await set(chessBox, color, x, y, 0, -1)
+            }
+            if (findRight(chessBox, x, y, color)) {
+                await set(chessBox, color, x, y, 0, 1)
+            }
+            if (findLeftUp(chessBox, x, y, color)) {
+                await set(chessBox, color, x, y, -1, -1)
+            }
+            if (findLeftDown(chessBox, x, y, color)) {
+                await set(chessBox, color, x, y, 1, -1)
+            }
+            if (findRightUp(chessBox, x, y, color)) {
+                await set(chessBox, color, x, y, -1, 1)
+            }
+            if (findRightDown(chessBox, x, y, color)) {
+                await set(chessBox, color, x, y, 1, 1)
+            }
+        }
+        let msg = '';
+        if (Win === 1) {
+            msg = `先手${First}赢，原因：${Reason}，赢子：${WinChessPieces}`
+        } else {
+            msg = `后手${Back}赢，原因：${Reason}，赢子：${WinChessPieces}`
+        }
+        await new Promise(r => setTimeout(() => r(), 500))
+        console.log(chessBox)
+        alert(msg)
+    }
+
+    function findUp(board, x, y, color) {
+        let v = false;
+        while (x - 1 >= 0) {
+            x-=1
+            if (board[x][y] === -1 * color) {
+                v = true
+                continue
+            }
+            if (board[x][y] === GRAY) {
+                return false
+            }
+            return v
+        }
+    }
+    function findDown(board, x, y, color) {
+        let v = false;
+        while (x + 1 <= 7) {
+            x+=1
+            if (board[x][y] === -1 * color) {
+                v = true
+                continue
+            }
+            if (board[x][y] === GRAY) {
+                return false
+            }
+            return v
+        }
+    }
+    function findLeft(board, x, y, color) {
+        let v = false;
+        while (y - 1 >= 0) {
+            y-=1
+            if (board[x][y] === -1 * color) {
+                v = true
+                continue
+            }
+            if (board[x][y] === GRAY) {
+                return false
+            }
+            return v
+        }
+    }
+    function findRight(board, x, y, color) {
+        let v = false;
+        while (y + 1 <= 7) {
+            y+=1
+            if (board[x][y] === -1 * color) {
+                v = true
+                continue
+            }
+            if (board[x][y] === GRAY) {
+                return false
+            }
+            return v
+        }
+    }
+    function findLeftUp(board, x, y, color) {
+        let v = false;
+        while (x - 1 >= 0 && y - 1 >= 0) {
+            y-=1
+            x-=1
+            if (board[x][y] === -1 * color) {
+                v = true
+                continue
+            }
+            if (board[x][y] === GRAY) {
+                return false
+            }
+            return v
+        }
+    }
+    function findLeftDown(board, x, y, color) {
+        let v = false;
+        while (y - 1 >= 0 && x + 1 <= 7) {
+            x+=1
+            y-=1
+            if (board[x][y] === -1 * color) {
+                v = true
+                continue
+            }
+            if (board[x][y] === GRAY) {
+                return false
+            }
+            return v
+        }
+    }
+    function findRightUp(board, x, y, color) {
+        let v = false;
+        while (x - 1 >= 0 && y + 1 <= 7) {
+            y+=1
+            x-=1
+            if (board[x][y] === -1 * color) {
+                v = true
+                continue
+            }
+            if (board[x][y] === GRAY) {
+                return false
+            }
+            return v
+        }
+    }
+    function findRightDown(board, x, y, color) {
+        let v = false;
+        while (x + 1 <= 7 && y + 1 <= 7) {
+            y+=1
+            x+=1
+            if (board[x][y] === -1 * color) {
+                v = true
+                continue
+            }
+            if (board[x][y] === GRAY) {
+                return false
+            }
+            return v
+        }
+    }
+    async function set(board, color, x1, y1, x2, y2) {
+        x1+=x2
+        y1+=y2
+        while(board[x1][y1] !== color) {
+            board[x1][y1] = color
+            oneStep(x1, y1, color)
+            x1+=x2
+            y1+=y2
+        }
+    }
+</script>
+</body>
+</html>
